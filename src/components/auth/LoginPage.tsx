@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Mail, Lock, ArrowRight, Brain, AlertCircle, Sun, Moon } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, ArrowRight, Brain, AlertCircle, Sun, Moon, RefreshCw } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { LoginCredentials } from '../../types/auth';
 
@@ -10,9 +10,11 @@ interface LoginPageProps {
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onSwitchToRegister, darkMode, onToggleDarkMode }) => {
-  const { login, isLoading, error } = useAuth();
+  const { login, isLoading, error, resendConfirmationEmail } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [isResendingConfirmation, setIsResendingConfirmation] = useState(false);
+  const [confirmationResent, setConfirmationResent] = useState(false);
   const [credentials, setCredentials] = useState<LoginCredentials>({
     email: '',
     password: '',
@@ -21,6 +23,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSwitchToRegister, darkMo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setConfirmationResent(false);
     await login(credentials);
   };
 
@@ -29,6 +32,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSwitchToRegister, darkMo
     // Handle forgot password logic
     setShowForgotPassword(false);
   };
+
+  const handleResendConfirmation = async () => {
+    if (!credentials.email) return;
+    
+    setIsResendingConfirmation(true);
+    try {
+      await resendConfirmationEmail(credentials.email);
+      setConfirmationResent(true);
+    } catch (error) {
+      console.error('Failed to resend confirmation email:', error);
+    } finally {
+      setIsResendingConfirmation(false);
+    }
+  };
+
+  const isEmailNotConfirmed = error === 'EMAIL_NOT_CONFIRMED';
 
   if (showForgotPassword) {
     return (
@@ -183,9 +202,51 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSwitchToRegister, darkMo
             </div>
 
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center">
-                <AlertCircle className="w-5 h-5 text-red-600 mr-3" />
-                <span className="text-red-700 text-sm">{error}</span>
+              <div className={`mb-6 p-4 border rounded-xl flex items-start ${
+                isEmailNotConfirmed 
+                  ? 'bg-yellow-50 border-yellow-200' 
+                  : 'bg-red-50 border-red-200'
+              }`}>
+                <AlertCircle className={`w-5 h-5 mr-3 mt-0.5 flex-shrink-0 ${
+                  isEmailNotConfirmed ? 'text-yellow-600' : 'text-red-600'
+                }`} />
+                <div className="flex-1">
+                  {isEmailNotConfirmed ? (
+                    <div>
+                      <p className="text-yellow-700 text-sm font-medium mb-2">
+                        Please confirm your email address
+                      </p>
+                      <p className="text-yellow-600 text-sm mb-3">
+                        Check your inbox (including spam folder) for a confirmation email. If you haven't received it, you can request a new one.
+                      </p>
+                      {confirmationResent ? (
+                        <p className="text-green-600 text-sm font-medium">
+                          ✓ Confirmation email sent! Check your inbox.
+                        </p>
+                      ) : (
+                        <button
+                          onClick={handleResendConfirmation}
+                          disabled={isResendingConfirmation || !credentials.email}
+                          className="inline-flex items-center text-sm font-medium text-yellow-700 hover:text-yellow-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isResendingConfirmation ? (
+                            <>
+                              <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
+                              Sending...
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="w-4 h-4 mr-1" />
+                              Resend confirmation email
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-red-700 text-sm">{error}</span>
+                  )}
+                </div>
               </div>
             )}
 

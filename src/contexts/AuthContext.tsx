@@ -9,6 +9,7 @@ interface AuthContextType extends AuthState {
   logout: () => void;
   updateProfile: (updates: Partial<AuthUser>) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  resendConfirmationEmail: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -205,7 +206,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await loadUserProfile(data.user);
       }
     } catch (error: any) {
-      dispatch({ type: 'LOGIN_FAILURE', payload: error.message || 'Login failed' });
+      let errorMessage = error.message || 'Login failed';
+      
+      // Provide more user-friendly error messages
+      if (error.message === 'Invalid login credentials') {
+        errorMessage = 'Please check your email and password, or sign up if you don\'t have an account.';
+      } else if (error.message === 'Email not confirmed') {
+        errorMessage = 'EMAIL_NOT_CONFIRMED'; // Special flag for the UI to handle
+      }
+      
+      dispatch({ type: 'LOGIN_FAILURE', payload: errorMessage });
     }
   };
 
@@ -292,6 +302,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const resendConfirmationEmail = async (email: string): Promise<void> => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email,
+    });
+
+    if (error) {
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -301,6 +322,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         updateProfile,
         resetPassword,
+        resendConfirmationEmail,
       }}
     >
       {children}
