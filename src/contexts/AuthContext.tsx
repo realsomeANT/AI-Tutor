@@ -124,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('user_profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error loading profile:', error);
@@ -132,8 +132,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      const authUser = convertToAuthUser(user, profile);
-      dispatch({ type: 'LOGIN_SUCCESS', payload: authUser });
+      // If no profile exists, create a default one
+      if (!profile) {
+        const defaultProfile = {
+          id: user.id,
+          username: user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
+          first_name: user.user_metadata?.first_name || '',
+          last_name: user.user_metadata?.last_name || '',
+          avatar_url: null,
+          bio: null,
+          date_of_birth: null,
+          phone: null,
+          location: null,
+          academic_info: {
+            gpa: null,
+            year: null,
+            major: null,
+            student_id: null,
+            enrolled_subjects: []
+          },
+          preferences: {
+            theme: 'light',
+            language: 'en',
+            notifications: {
+              push: true,
+              email: true,
+              grades: true,
+              assignments: true,
+              announcements: false
+            }
+          }
+        };
+
+        const { data: newProfile, error: insertError } = await supabase
+          .from('user_profiles')
+          .insert(defaultProfile)
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Error creating profile:', insertError);
+          dispatch({ type: 'LOGIN_FAILURE', payload: 'Failed to create user profile' });
+          return;
+        }
+
+        const authUser = convertToAuthUser(user, newProfile);
+        dispatch({ type: 'LOGIN_SUCCESS', payload: authUser });
+      } else {
+        const authUser = convertToAuthUser(user, profile);
+        dispatch({ type: 'LOGIN_SUCCESS', payload: authUser });
+      }
     } catch (error) {
       console.error('Error loading profile:', error);
       dispatch({ type: 'LOGIN_FAILURE', payload: 'Failed to load user profile' });
