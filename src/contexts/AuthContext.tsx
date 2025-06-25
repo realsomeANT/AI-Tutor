@@ -192,20 +192,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (credentials: LoginCredentials): Promise<void> => {
     dispatch({ type: 'LOGIN_START' });
     
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: credentials.email,
-        password: credentials.password,
-      });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: credentials.email,
+      password: credentials.password,
+    });
 
-      if (error) {
-        throw error;
-      }
-
-      if (data.user) {
-        await loadUserProfile(data.user);
-      }
-    } catch (error: any) {
+    if (error) {
       let errorMessage = error.message || 'Login failed';
       
       // Provide more user-friendly error messages
@@ -216,6 +208,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       dispatch({ type: 'LOGIN_FAILURE', payload: errorMessage });
+      return;
+    }
+
+    if (data.user) {
+      await loadUserProfile(data.user);
     }
   };
 
