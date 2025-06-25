@@ -360,6 +360,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSwitchToRegister, darkMo
                 </button>
               </p>
             </div>
+
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+              <p className="text-blue-800 text-sm font-medium mb-2">Demo Credentials:</p>
+              <p className="text-blue-700 text-xs">Email: demo@example.com</p>
+              <p className="text-blue-700 text-xs">Password: password</p>
+            </div>
           </div>
         </div>
       </div>

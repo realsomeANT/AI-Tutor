@@ -1,7 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { AuthUser, AuthState, LoginCredentials, RegisterData } from '../types/auth';
-import { supabase } from '../lib/supabase';
-import type { User, Session } from '@supabase/supabase-js';
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
@@ -69,34 +67,69 @@ const initialState: AuthState = {
   error: null,
 };
 
-// Helper function to convert database profile to AuthUser
-const convertToAuthUser = (user: User, profile: any): AuthUser => {
-  return {
-    id: user.id,
-    email: user.email!,
-    username: profile.username,
-    firstName: profile.first_name,
-    lastName: profile.last_name,
-    avatar: profile.avatar_url,
-    bio: profile.bio,
-    dateOfBirth: profile.date_of_birth ? new Date(profile.date_of_birth) : undefined,
-    phone: profile.phone,
-    location: profile.location,
-    joinDate: new Date(profile.created_at),
-    lastLogin: new Date(),
-    isEmailVerified: user.email_confirmed_at !== null,
-    preferences: profile.preferences,
-    academicInfo: profile.academic_info,
-  };
+// Mock user data for demo when Supabase is not available
+const mockUser: AuthUser = {
+  id: '1',
+  email: 'demo@example.com',
+  username: 'demo',
+  firstName: 'Demo',
+  lastName: 'User',
+  avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
+  bio: 'Demo user for testing the application.',
+  dateOfBirth: new Date('2000-05-15'),
+  phone: '+1 (555) 123-4567',
+  location: 'San Francisco, CA',
+  joinDate: new Date('2024-01-15'),
+  lastLogin: new Date(),
+  isEmailVerified: true,
+  preferences: {
+    notifications: {
+      email: true,
+      push: true,
+      assignments: true,
+      grades: true,
+      announcements: false,
+    },
+    theme: 'light',
+    language: 'en',
+  },
+  academicInfo: {
+    studentId: 'DEMO001',
+    major: 'Computer Science',
+    year: 'Junior',
+    gpa: 3.8,
+    enrolledSubjects: ['math', 'physics', 'chemistry'],
+  },
+};
+
+// Check if Supabase is properly configured
+const isSupabaseConfigured = () => {
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    return !!(supabaseUrl && supabaseAnonKey);
+  } catch {
+    return false;
+  }
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
+    // Check if Supabase is configured
+    if (!isSupabaseConfigured()) {
+      console.warn('Supabase not configured, using mock authentication');
+      dispatch({ type: 'SET_LOADING', payload: false });
+      return;
+    }
+
+    // Only try to initialize Supabase if it's configured
+    const initializeAuth = async () => {
       try {
+        const { supabase } = await import('../lib/supabase');
+        
+        // Get initial session
         dispatch({ type: 'SET_LOADING', payload: true });
         const { data: { session } } = await supabase.auth.getSession();
         
@@ -105,28 +138,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           dispatch({ type: 'SET_LOADING', payload: false });
         }
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+          if (event === 'SIGNED_IN' && session?.user) {
+            await loadUserProfile(session.user);
+          } else if (event === 'SIGNED_OUT') {
+            dispatch({ type: 'LOGOUT' });
+          }
+        });
+
+        return () => subscription.unsubscribe();
       } catch (error) {
-        console.error('Error getting initial session:', error);
+        console.error('Error initializing auth:', error);
         dispatch({ type: 'SET_LOADING', payload: false });
       }
     };
 
-    getInitialSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        await loadUserProfile(session.user);
-      } else if (event === 'SIGNED_OUT') {
-        dispatch({ type: 'LOGOUT' });
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    initializeAuth();
   }, []);
 
-  const loadUserProfile = async (user: User) => {
+  const loadUserProfile = async (user: any) => {
     try {
+      const { supabase } = await import('../lib/supabase');
+      
       const { data: profile, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -195,10 +230,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Helper function to convert database profile to AuthUser
+  const convertToAuthUser = (user: any, profile: any): AuthUser => {
+    return {
+      id: user.id,
+      email: user.email!,
+      username: profile.username,
+      firstName: profile.first_name,
+      lastName: profile.last_name,
+      avatar: profile.avatar_url,
+      bio: profile.bio,
+      dateOfBirth: profile.date_of_birth ? new Date(profile.date_of_birth) : undefined,
+      phone: profile.phone,
+      location: profile.location,
+      joinDate: new Date(profile.created_at),
+      lastLogin: new Date(),
+      isEmailVerified: user.email_confirmed_at !== null,
+      preferences: profile.preferences,
+      academicInfo: profile.academic_info,
+    };
+  };
+
   const login = async (credentials: LoginCredentials): Promise<void> => {
     dispatch({ type: 'LOGIN_START' });
     
     try {
+      // If Supabase is not configured, use mock authentication
+      if (!isSupabaseConfigured()) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        if (credentials.email === 'demo@example.com' && credentials.password === 'password') {
+          const user = { ...mockUser, lastLogin: new Date() };
+          dispatch({ type: 'LOGIN_SUCCESS', payload: user });
+        } else {
+          throw new Error('Invalid email or password. Try demo@example.com / password');
+        }
+        return;
+      }
+
+      const { supabase } = await import('../lib/supabase');
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
@@ -211,7 +282,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (error.message === 'Invalid login credentials') {
           errorMessage = 'Please check your email and password, or sign up if you don\'t have an account.';
         } else if (error.message === 'Email not confirmed') {
-          errorMessage = 'EMAIL_NOT_CONFIRMED'; // Special flag for the UI to handle
+          errorMessage = 'EMAIL_NOT_CONFIRMED';
         }
         
         dispatch({ type: 'LOGIN_FAILURE', payload: errorMessage });
@@ -233,6 +304,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dispatch({ type: 'LOGIN_START' });
     
     try {
+      // If Supabase is not configured, use mock registration
+      if (!isSupabaseConfigured()) {
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        const newUser: AuthUser = {
+          ...mockUser,
+          id: Date.now().toString(),
+          email: data.email,
+          username: data.username,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          joinDate: new Date(),
+          lastLogin: new Date(),
+          academicInfo: {
+            ...mockUser.academicInfo,
+            enrolledSubjects: [],
+          },
+        };
+        
+        dispatch({ type: 'LOGIN_SUCCESS', payload: newUser });
+        return;
+      }
+
+      const { supabase } = await import('../lib/supabase');
+      
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -272,7 +368,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async (): Promise<void> => {
     try {
-      await supabase.auth.signOut();
+      if (isSupabaseConfigured()) {
+        const { supabase } = await import('../lib/supabase');
+        await supabase.auth.signOut();
+      }
       dispatch({ type: 'LOGOUT' });
     } catch (error) {
       console.error('Logout error:', error);
@@ -287,6 +386,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dispatch({ type: 'SET_LOADING', payload: true });
     
     try {
+      if (!isSupabaseConfigured()) {
+        // Mock update for demo
+        await new Promise(resolve => setTimeout(resolve, 500));
+        dispatch({ type: 'UPDATE_PROFILE', payload: updates });
+        return;
+      }
+
+      const { supabase } = await import('../lib/supabase');
+      
       const profileUpdates: any = {};
       
       if (updates.firstName) profileUpdates.first_name = updates.firstName;
@@ -318,6 +426,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const resetPassword = async (email: string): Promise<void> => {
+    if (!isSupabaseConfigured()) {
+      // Mock reset for demo
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return;
+    }
+
+    const { supabase } = await import('../lib/supabase');
+    
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
@@ -328,6 +444,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const resendConfirmationEmail = async (email: string): Promise<void> => {
+    if (!isSupabaseConfigured()) {
+      // Mock resend for demo
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return;
+    }
+
+    const { supabase } = await import('../lib/supabase');
+    
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: email,
