@@ -133,13 +133,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      // If no profile exists, create a default one
+      // If no profile exists, create one with the user's metadata
       if (!profile) {
         const defaultProfile = {
           id: user.id,
-          username: user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
-          first_name: user.user_metadata?.first_name || '',
-          last_name: user.user_metadata?.last_name || '',
+          username: user.user_metadata?.username || user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
+          first_name: user.user_metadata?.first_name || 'User',
+          last_name: user.user_metadata?.last_name || 'Student',
           avatar_url: null,
           bio: null,
           date_of_birth: null,
@@ -237,8 +237,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (authData.user) {
-        // Profile will be created automatically by the trigger
-        // Wait a moment for the trigger to complete
+        // The trigger will create the profile automatically with the correct data
+        // Wait a moment for the trigger to complete, then load the profile
         setTimeout(async () => {
           await loadUserProfile(authData.user!);
         }, 1000);
