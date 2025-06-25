@@ -7,7 +7,6 @@ interface AuthContextType extends AuthState {
   logout: () => void;
   updateProfile: (updates: Partial<AuthUser>) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
-  resendConfirmationEmail: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -210,7 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       location: profile.location,
       joinDate: new Date(profile.created_at),
       lastLogin: new Date(),
-      isEmailVerified: user.email_confirmed_at !== null,
+      isEmailVerified: true, // Always true since we removed email confirmation
       preferences: profile.preferences,
       academicInfo: profile.academic_info,
     };
@@ -246,8 +245,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Provide more user-friendly error messages
         if (error.message === 'Invalid login credentials') {
           errorMessage = 'Invalid email or password. Please check your credentials and try again, or use the demo account (demo@example.com / password).';
-        } else if (error.message === 'Email not confirmed') {
-          errorMessage = 'EMAIL_NOT_CONFIRMED';
         }
         
         dispatch({ type: 'LOGIN_FAILURE', payload: errorMessage });
@@ -294,10 +291,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const { supabase } = await import('../lib/supabase');
       
+      // Sign up without email confirmation
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
+          emailRedirectTo: undefined, // Disable email confirmation
           data: {
             username: data.username,
             first_name: data.firstName,
@@ -310,13 +309,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      if (authData.user) {
-        // Check if user needs email confirmation
-        if (!authData.session) {
-          dispatch({ type: 'LOGIN_FAILURE', payload: 'EMAIL_NOT_CONFIRMED' });
-          return;
-        }
-
+      if (authData.user && authData.session) {
+        // User is immediately signed in without email confirmation
         // The trigger will create the profile automatically with the correct data
         // Wait a moment for the trigger to complete, then load the profile
         setTimeout(async () => {
@@ -408,25 +402,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const resendConfirmationEmail = async (email: string): Promise<void> => {
-    if (!isSupabaseConfigured()) {
-      // Mock resend for demo
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return;
-    }
-
-    const { supabase } = await import('../lib/supabase');
-    
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email: email,
-    });
-
-    if (error) {
-      throw error;
-    }
-  };
-
   return (
     <AuthContext.Provider
       value={{
@@ -436,7 +411,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         updateProfile,
         resetPassword,
-        resendConfirmationEmail,
       }}
     >
       {children}
