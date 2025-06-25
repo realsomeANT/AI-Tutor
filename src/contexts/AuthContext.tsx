@@ -92,13 +92,6 @@ const mockUser: AuthUser = {
     theme: 'light',
     language: 'en',
   },
-  academicInfo: {
-    studentId: 'DEMO001',
-    major: 'Computer Science',
-    year: 'Junior',
-    gpa: 3.8,
-    enrolledSubjects: ['math', 'physics', 'chemistry'],
-  },
 };
 
 // Check if Supabase is properly configured
@@ -211,7 +204,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       lastLogin: new Date(),
       isEmailVerified: true, // Always true since we removed email confirmation
       preferences: profile.preferences,
-      academicInfo: profile.academic_info,
     };
   };
 
@@ -279,10 +271,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           lastName: data.lastName,
           joinDate: new Date(),
           lastLogin: new Date(),
-          academicInfo: {
-            ...mockUser.academicInfo,
-            enrolledSubjects: [],
-          },
         };
         
         dispatch({ type: 'LOGIN_SUCCESS', payload: newUser });
@@ -363,7 +351,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (updates.phone !== undefined) profileUpdates.phone = updates.phone;
       if (updates.location !== undefined) profileUpdates.location = updates.location;
       if (updates.dateOfBirth) profileUpdates.date_of_birth = updates.dateOfBirth.toISOString().split('T')[0];
-      if (updates.academicInfo) profileUpdates.academic_info = updates.academicInfo;
       if (updates.preferences) profileUpdates.preferences = updates.preferences;
 
       const { error } = await supabase

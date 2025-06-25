@@ -73,13 +73,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack, darkMode }) =>
                 <p className={`text-lg transition-colors duration-300 ${
                   darkMode ? 'text-gray-400' : 'text-gray-500'
                 }`}>@{user.username}</p>
-                {user.academicInfo?.major && (
-                  <p className={`text-base transition-colors duration-300 ${
-                    darkMode ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
-                    {user.academicInfo.major} • {user.academicInfo.year}
-                  </p>
-                )}
               </div>
             </div>
           </div>

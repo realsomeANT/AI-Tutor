@@ -23,13 +23,6 @@ export interface AuthUser {
     theme: 'light' | 'dark' | 'auto';
     language: string;
   };
-  academicInfo: {
-    studentId?: string;
-    major?: string;
-    year?: string;
-    gpa?: number;
-    enrolledSubjects: string[];
-  };
 }
 
 export interface LoginCredentials {

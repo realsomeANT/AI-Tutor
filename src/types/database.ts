@@ -12,13 +12,6 @@ export interface Database {
           date_of_birth: string | null;
           phone: string | null;
           location: string | null;
-          academic_info: {
-            student_id?: string;
-            major?: string;
-            year?: string;
-            gpa?: number;
-            enrolled_subjects: string[];
-          };
           preferences: {
             notifications: {
               email: boolean;
@@ -43,13 +36,6 @@ export interface Database {
           date_of_birth?: string;
           phone?: string;
           location?: string;
-          academic_info?: {
-            student_id?: string;
-            major?: string;
-            year?: string;
-            gpa?: number;
-            enrolled_subjects?: string[];
-          };
           preferences?: {
             notifications?: {
               email?: boolean;
@@ -71,13 +57,6 @@ export interface Database {
           date_of_birth?: string;
           phone?: string;
           location?: string;
-          academic_info?: {
-            student_id?: string;
-            major?: string;
-            year?: string;
-            gpa?: number;
-            enrolled_subjects?: string[];
-          };
           preferences?: {
             notifications?: {
               email?: boolean;
