@@ -113,6 +113,11 @@ const isSupabaseConfigured = () => {
   }
 };
 
+// Check if credentials are demo credentials
+const isDemoCredentials = (email: string, password: string) => {
+  return email === 'demo@example.com' && password === 'password';
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
@@ -215,17 +220,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     dispatch({ type: 'LOGIN_START' });
     
     try {
-      // If Supabase is not configured, use mock authentication
-      if (!isSupabaseConfigured()) {
+      // Always check for demo credentials first, regardless of Supabase configuration
+      if (isDemoCredentials(credentials.email, credentials.password)) {
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        if (credentials.email === 'demo@example.com' && credentials.password === 'password') {
-          const user = { ...mockUser, lastLogin: new Date() };
-          dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-        } else {
-          throw new Error('Invalid email or password. Try demo@example.com / password');
-        }
+        const user = { ...mockUser, lastLogin: new Date() };
+        dispatch({ type: 'LOGIN_SUCCESS', payload: user });
         return;
+      }
+
+      // If Supabase is not configured, only allow demo credentials
+      if (!isSupabaseConfigured()) {
+        throw new Error('Invalid email or password. Try demo@example.com / password');
       }
 
       const { supabase } = await import('../lib/supabase');
@@ -240,7 +245,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Provide more user-friendly error messages
         if (error.message === 'Invalid login credentials') {
-          errorMessage = 'Please check your email and password, or sign up if you don\'t have an account.';
+          errorMessage = 'Invalid email or password. Please check your credentials and try again, or use the demo account (demo@example.com / password).';
         } else if (error.message === 'Email not confirmed') {
           errorMessage = 'EMAIL_NOT_CONFIRMED';
         }
