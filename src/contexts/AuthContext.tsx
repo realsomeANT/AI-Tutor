@@ -351,6 +351,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (updates.phone !== undefined) profileUpdates.phone = updates.phone;
       if (updates.location !== undefined) profileUpdates.location = updates.location;
       if (updates.dateOfBirth) profileUpdates.date_of_birth = updates.dateOfBirth.toISOString().split('T')[0];
+      if (updates.avatar !== undefined) profileUpdates.avatar_url = updates.avatar;
       if (updates.preferences) profileUpdates.preferences = updates.preferences;
 
       const { error } = await supabase

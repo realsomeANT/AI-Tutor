@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   User, Mail, Phone, MapPin, Calendar, Edit3, Save, X, 
-  Camera
+  Camera, Upload, AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthUser } from '../../types/auth';
@@ -15,6 +15,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack, darkMode }) =>
   const { user, updateProfile, isLoading } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState<Partial<AuthUser>>(user || {});
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!user) return null;
 
@@ -26,6 +29,66 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack, darkMode }) =>
   const handleCancel = () => {
     setEditedUser(user);
     setIsEditing(false);
+    setImageUploadError(null);
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setImageUploadError('Please select a valid image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setImageUploadError('Image size must be less than 5MB');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    setImageUploadError(null);
+
+    try {
+      // Convert image to base64 for demo purposes
+      // In a real app, you'd upload to a storage service like Supabase Storage
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const imageUrl = e.target?.result as string;
+        
+        // Update the edited user state
+        setEditedUser(prev => ({ ...prev, avatar: imageUrl }));
+        
+        // If not in editing mode, save immediately
+        if (!isEditing) {
+          try {
+            await updateProfile({ avatar: imageUrl });
+          } catch (error) {
+            setImageUploadError('Failed to update profile image');
+            console.error('Error updating profile image:', error);
+          }
+        }
+        
+        setIsUploadingImage(false);
+      };
+      
+      reader.onerror = () => {
+        setImageUploadError('Failed to read image file');
+        setIsUploadingImage(false);
+      };
+      
+      reader.readAsDataURL(file);
+    } catch (error) {
+      setImageUploadError('Failed to upload image');
+      setIsUploadingImage(false);
+      console.error('Error uploading image:', error);
+    }
+  };
+
+  const triggerImageUpload = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -40,9 +103,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack, darkMode }) =>
             <div className="text-center mb-8">
               <div className="relative inline-block">
                 <div className="w-32 h-32 mx-auto mb-6 relative">
-                  {user.avatar ? (
+                  {(editedUser.avatar || user.avatar) ? (
                     <img
-                      src={user.avatar}
+                      src={editedUser.avatar || user.avatar}
                       alt={`${user.firstName} ${user.lastName}`}
                       className="w-full h-full rounded-full object-cover"
                     />
@@ -55,13 +118,39 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack, darkMode }) =>
                       }`} />
                     </div>
                   )}
-                  {isEditing && (
-                    <button className="absolute -bottom-2 -right-2 w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors shadow-lg border-4 border-white">
+                  
+                  {/* Camera Button - Always visible */}
+                  <button 
+                    onClick={triggerImageUpload}
+                    disabled={isUploadingImage}
+                    className="absolute -bottom-2 -right-2 w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors shadow-lg border-4 border-white disabled:opacity-50"
+                    title="Change profile picture"
+                  >
+                    {isUploadingImage ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
                       <Camera className="w-4 h-4 text-white" />
-                    </button>
-                  )}
+                    )}
+                  </button>
+                  
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
                 </div>
               </div>
+
+              {/* Image Upload Error */}
+              {imageUploadError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start">
+                  <AlertCircle className="w-4 h-4 text-red-600 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-red-700 text-sm">{imageUploadError}</span>
+                </div>
+              )}
 
               {/* Name and Info */}
               <div className="space-y-2">
