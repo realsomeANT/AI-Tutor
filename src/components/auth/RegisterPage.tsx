@@ -32,12 +32,17 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onSwitchToLogin, dar
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       errors.email = 'Email is invalid';
     } else {
-      // Check for generic email addresses that might be rejected by Supabase
-      const genericPrefixes = ['admin@', 'test@', 'demo@', 'example@', 'noreply@', 'no-reply@'];
+      // Check for truly generic email addresses that might be rejected by Supabase
+      // Only block exact matches of generic patterns, not partial matches
+      const genericEmails = [
+        'admin@example.com', 'test@example.com', 'demo@example.com', 
+        'example@example.com', 'noreply@example.com', 'no-reply@example.com',
+        'admin@test.com', 'test@test.com', 'demo@test.com'
+      ];
       const emailLower = formData.email.toLowerCase();
       
-      if (genericPrefixes.some(prefix => emailLower.startsWith(prefix))) {
-        errors.email = 'Please use a personal email address instead of a generic one';
+      if (genericEmails.includes(emailLower) || emailLower.endsWith('@example.com') || emailLower.endsWith('@test.com')) {
+        errors.email = 'Please use a valid personal email address';
       }
     }
 
