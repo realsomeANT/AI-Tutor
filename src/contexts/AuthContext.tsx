@@ -279,7 +279,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const { supabase } = await import('../lib/supabase');
       
-      // Sign up without email confirmation
+      // Sign up without email confirmation - this is the key change
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -297,13 +297,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      if (authData.user && authData.session) {
-        // User is immediately signed in without email confirmation
-        // The trigger will create the profile automatically with the correct data
-        // Wait a moment for the trigger to complete, then load the profile
-        setTimeout(async () => {
-          await loadUserProfile(authData.user!);
-        }, 1000);
+      // Check if user was created successfully
+      if (authData.user) {
+        // In Supabase, when email confirmation is disabled, the user should have a session immediately
+        if (authData.session) {
+          // User is immediately signed in
+          setTimeout(async () => {
+            await loadUserProfile(authData.user!);
+          }, 1000);
+        } else {
+          // If no session but user exists, try to sign them in
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email: data.email,
+            password: data.password,
+          });
+
+          if (signInError) {
+            dispatch({ type: 'LOGIN_FAILURE', payload: 'Registration successful, but automatic sign-in failed. Please try logging in manually.' });
+            return;
+          }
+
+          if (signInData.user) {
+            await loadUserProfile(signInData.user);
+          }
+        }
       } else {
         dispatch({ type: 'LOGIN_FAILURE', payload: 'Registration failed - no user data received' });
       }
