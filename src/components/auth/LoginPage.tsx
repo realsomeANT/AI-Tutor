@@ -299,27 +299,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSwitchToRegister, darkMo
                 </button>
               </p>
             </div>
-
-            <div className={`mt-6 p-4 border rounded-xl transition-colors duration-300 ${
-              darkMode 
-                ? 'bg-blue-900/20 border-blue-700' 
-                : 'bg-blue-50 border-blue-200'
-            }`}>
-              <p className={`text-sm font-medium mb-2 transition-colors duration-300 ${
-                darkMode ? 'text-blue-300' : 'text-blue-800'
-              }`}>Demo Credentials:</p>
-              <p className={`text-xs transition-colors duration-300 ${
-                darkMode ? 'text-blue-400' : 'text-blue-700'
-              }`}>Email: demo@example.com</p>
-              <p className={`text-xs transition-colors duration-300 ${
-                darkMode ? 'text-blue-400' : 'text-blue-700'
-              }`}>Password: password</p>
-              <p className={`text-xs mt-2 transition-colors duration-300 ${
-                darkMode ? 'text-blue-400' : 'text-blue-600'
-              }`}>
-                Use these credentials to try the app without creating an account.
-              </p>
-            </div>
           </div>
         </div>
       </div>
