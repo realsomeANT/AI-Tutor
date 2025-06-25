@@ -234,8 +234,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         let errorMessage = error.message || 'Login failed';
         
-        // Provide more user-friendly error messages
-        if (error.message === 'Invalid login credentials') {
+        // Handle email confirmation error specifically
+        if (error.message === 'Email not confirmed') {
+          errorMessage = 'Your email address has not been confirmed yet. Please check your email for a confirmation link, or contact support if you need assistance. You can also try the demo account (demo@example.com / password).';
+        } else if (error.message === 'Invalid login credentials') {
           errorMessage = 'Invalid email or password. Please check your credentials and try again, or use the demo account (demo@example.com / password).';
         }
         
@@ -279,7 +281,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const { supabase } = await import('../lib/supabase');
       
-      // Sign up without email confirmation - this is the key change
+      // Sign up with email confirmation disabled
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -294,25 +296,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
+        // Handle specific registration errors
+        if (error.message.includes('email_not_confirmed') || error.message === 'Email not confirmed') {
+          dispatch({ type: 'LOGIN_FAILURE', payload: 'Registration successful! However, your Supabase project requires email confirmation. Please check your email for a confirmation link before logging in, or contact support to disable email confirmation. You can use the demo account (demo@example.com / password) in the meantime.' });
+          return;
+        }
         throw error;
       }
 
       // Check if user was created successfully
       if (authData.user) {
-        // In Supabase, when email confirmation is disabled, the user should have a session immediately
+        // Check if email confirmation is required
+        if (!authData.session && authData.user && !authData.user.email_confirmed_at) {
+          dispatch({ type: 'LOGIN_FAILURE', payload: 'Registration successful! Please check your email for a confirmation link before logging in. You can also use the demo account (demo@example.com / password) to explore the app.' });
+          return;
+        }
+
+        // If we have a session, user is immediately signed in
         if (authData.session) {
-          // User is immediately signed in
           setTimeout(async () => {
             await loadUserProfile(authData.user!);
           }, 1000);
         } else {
-          // If no session but user exists, try to sign them in
+          // Try to sign them in automatically
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
             email: data.email,
             password: data.password,
           });
 
           if (signInError) {
+            if (signInError.message === 'Email not confirmed') {
+              dispatch({ type: 'LOGIN_FAILURE', payload: 'Registration successful! Please check your email for a confirmation link before logging in. You can also use the demo account (demo@example.com / password) to explore the app.' });
+              return;
+            }
             dispatch({ type: 'LOGIN_FAILURE', payload: 'Registration successful, but automatic sign-in failed. Please try logging in manually.' });
             return;
           }
