@@ -4,7 +4,7 @@ import { AuthUser, AuthState, LoginCredentials, RegisterData } from '../types/au
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateProfile: (updates: Partial<AuthUser>) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }
@@ -315,11 +315,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async (): Promise<void> => {
     try {
+      console.log('Logout initiated...');
+      
       if (isSupabaseConfigured()) {
         const { supabase } = await import('../lib/supabase');
-        await supabase.auth.signOut();
+        console.log('Signing out from Supabase...');
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+          console.error('Supabase logout error:', error);
+          // Continue with logout even if Supabase fails
+        }
       }
+      
+      console.log('Dispatching logout action...');
       dispatch({ type: 'LOGOUT' });
+      console.log('Logout completed');
     } catch (error) {
       console.error('Logout error:', error);
       // Still dispatch logout even if there's an error

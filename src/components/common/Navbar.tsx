@@ -18,9 +18,15 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    setIsMenuOpen(false);
+  const handleLogout = async () => {
+    try {
+      console.log('Navbar: Logout button clicked');
+      setIsMenuOpen(false);
+      await logout();
+      console.log('Navbar: Logout completed');
+    } catch (error) {
+      console.error('Navbar: Logout error:', error);
+    }
   };
 
   const handleNavigation = (view: 'dashboard' | 'profile' | 'subjects' | 'analytics' | 'ai-tutor') => {
@@ -112,8 +118,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <hr className={`my-2 ${darkMode ? 'border-gray-600' : 'border-gray-200'}`} />
                     <button
                       onClick={handleLogout}
-                      className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-blue-600 hover:bg-blue-50 ${
-                        darkMode ? 'hover:bg-blue-900' : ''
+                      className={`w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors text-red-600 hover:bg-red-50 ${
+                        darkMode ? 'hover:bg-red-900/20' : ''
                       }`}
                     >
                       <LogOut className="w-4 h-4 mr-3" />
@@ -179,11 +185,21 @@ export const Navbar: React.FC<NavbarProps> = ({
                   }`}
                   title="Go to Profile"
                 >
-                  <img 
-                    src={user.avatar} 
-                    alt={user.firstName}
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
+                  {user.avatar ? (
+                    <img 
+                      src={user.avatar} 
+                      alt={user.firstName}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                      darkMode ? 'bg-gray-700' : 'bg-gray-200'
+                    }`}>
+                      <User className={`w-4 h-4 transition-colors duration-300 ${
+                        darkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`} />
+                    </div>
+                  )}
                 </button>
               </>
             )}
