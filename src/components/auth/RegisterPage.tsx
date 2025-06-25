@@ -31,6 +31,14 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onSwitchToLogin, dar
       errors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       errors.email = 'Email is invalid';
+    } else {
+      // Check for generic email addresses that might be rejected by Supabase
+      const genericPrefixes = ['admin@', 'test@', 'demo@', 'example@', 'noreply@', 'no-reply@'];
+      const emailLower = formData.email.toLowerCase();
+      
+      if (genericPrefixes.some(prefix => emailLower.startsWith(prefix))) {
+        errors.email = 'Please use a personal email address instead of a generic one';
+      }
     }
 
     if (!formData.username) {
