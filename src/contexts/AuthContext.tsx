@@ -281,12 +281,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const { supabase } = await import('../lib/supabase');
       
-      // Sign up with email confirmation disabled
+      // Sign up without email confirmation
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: undefined, // Disable email confirmation
+          emailRedirectTo: undefined, // Disable email confirmation redirect
           data: {
             username: data.username,
             first_name: data.firstName,
@@ -306,36 +306,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Check if user was created successfully
       if (authData.user) {
-        // Check if email confirmation is required
-        if (!authData.session && authData.user && !authData.user.email_confirmed_at) {
-          dispatch({ type: 'LOGIN_FAILURE', payload: 'Registration successful! Please check your email for a confirmation link before logging in. You can also use the demo account (demo@example.com / password) to explore the app.' });
-          return;
-        }
-
-        // If we have a session, user is immediately signed in
+        // If we have a session, user is immediately signed in (email confirmation disabled)
         if (authData.session) {
           setTimeout(async () => {
             await loadUserProfile(authData.user!);
           }, 1000);
         } else {
-          // Try to sign them in automatically
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-            email: data.email,
-            password: data.password,
-          });
-
-          if (signInError) {
-            if (signInError.message === 'Email not confirmed') {
-              dispatch({ type: 'LOGIN_FAILURE', payload: 'Registration successful! Please check your email for a confirmation link before logging in. You can also use the demo account (demo@example.com / password) to explore the app.' });
-              return;
-            }
-            dispatch({ type: 'LOGIN_FAILURE', payload: 'Registration successful, but automatic sign-in failed. Please try logging in manually.' });
-            return;
-          }
-
-          if (signInData.user) {
-            await loadUserProfile(signInData.user);
-          }
+          // Email confirmation is still enabled - inform user
+          dispatch({ type: 'LOGIN_FAILURE', payload: 'Registration successful! Please check your email for a confirmation link before logging in. You can also use the demo account (demo@example.com / password) to explore the app.' });
         }
       } else {
         dispatch({ type: 'LOGIN_FAILURE', payload: 'Registration failed - no user data received' });
