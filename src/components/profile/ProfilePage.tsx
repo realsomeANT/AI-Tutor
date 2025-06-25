@@ -40,11 +40,21 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack, darkMode }) =>
             <div className="text-center mb-8">
               <div className="relative inline-block">
                 <div className="w-32 h-32 mx-auto mb-6 relative">
-                  <img
-                    src={user.avatar || 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2'}
-                    alt={`${user.firstName} ${user.lastName}`}
-                    className="w-full h-full rounded-full object-cover"
-                  />
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={`${user.firstName} ${user.lastName}`}
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className={`w-full h-full rounded-full flex items-center justify-center transition-colors duration-300 ${
+                      darkMode ? 'bg-gray-700' : 'bg-gray-200'
+                    }`}>
+                      <User className={`w-16 h-16 transition-colors duration-300 ${
+                        darkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`} />
+                    </div>
+                  )}
                   {isEditing && (
                     <button className="absolute -bottom-2 -right-2 w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors shadow-lg border-4 border-white">
                       <Camera className="w-4 h-4 text-white" />
@@ -63,7 +73,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack, darkMode }) =>
                 <p className={`text-lg transition-colors duration-300 ${
                   darkMode ? 'text-gray-400' : 'text-gray-500'
                 }`}>@{user.username}</p>
-                {user.academicInfo.major && (
+                {user.academicInfo?.major && (
                   <p className={`text-base transition-colors duration-300 ${
                     darkMode ? 'text-gray-400' : 'text-gray-600'
                   }`}>
@@ -144,7 +154,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack, darkMode }) =>
                   <div className={`px-4 py-3 rounded-2xl transition-colors duration-300 ${
                     darkMode ? 'bg-gray-700 text-white' : 'bg-gray-50 text-gray-900'
                   }`}>
-                    {user.firstName}
+                    {user.firstName || ''}
                   </div>
                 )}
               </div>
@@ -171,7 +181,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack, darkMode }) =>
                   <div className={`px-4 py-3 rounded-2xl transition-colors duration-300 ${
                     darkMode ? 'bg-gray-700 text-white' : 'bg-gray-50 text-gray-900'
                   }`}>
-                    {user.lastName}
+                    {user.lastName || ''}
                   </div>
                 )}
               </div>
@@ -202,7 +212,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack, darkMode }) =>
                     <div className={`pl-12 pr-4 py-3 rounded-2xl transition-colors duration-300 ${
                       darkMode ? 'bg-gray-700 text-white' : 'bg-gray-50 text-gray-900'
                     }`}>
-                      {user.email}
+                      {user.email || ''}
                     </div>
                   )}
                 </div>
@@ -235,7 +245,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack, darkMode }) =>
                     <div className={`pl-12 pr-4 py-3 rounded-2xl transition-colors duration-300 ${
                       darkMode ? 'bg-gray-700 text-white' : 'bg-gray-50 text-gray-900'
                     }`}>
-                      {user.phone || '+1 (555) 123-4567'}
+                      {user.phone || ''}
                     </div>
                   )}
                 </div>
@@ -268,7 +278,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack, darkMode }) =>
                     <div className={`pl-12 pr-4 py-3 rounded-2xl transition-colors duration-300 ${
                       darkMode ? 'bg-gray-700 text-white' : 'bg-gray-50 text-gray-900'
                     }`}>
-                      {user.location || 'San Francisco, CA'}
+                      {user.location || ''}
                     </div>
                   )}
                 </div>
@@ -300,7 +310,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack, darkMode }) =>
                     <div className={`pl-12 pr-4 py-3 rounded-2xl transition-colors duration-300 ${
                       darkMode ? 'bg-gray-700 text-white' : 'bg-gray-50 text-gray-900'
                     }`}>
-                      {user.dateOfBirth ? user.dateOfBirth.toLocaleDateString() : '15/5/2000'}
+                      {user.dateOfBirth ? user.dateOfBirth.toLocaleDateString() : ''}
                     </div>
                   )}
                 </div>
@@ -330,7 +340,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onBack, darkMode }) =>
                 <div className={`px-4 py-4 rounded-2xl min-h-[100px] transition-colors duration-300 ${
                   darkMode ? 'bg-gray-700 text-white' : 'bg-gray-50 text-gray-900'
                 }`}>
-                  {user.bio || 'Computer Science student passionate about AI and machine learning.'}
+                  {user.bio || ''}
                 </div>
               )}
             </div>
