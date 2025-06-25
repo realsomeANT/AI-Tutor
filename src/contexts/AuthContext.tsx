@@ -65,7 +65,7 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
 const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
-  isLoading: true,
+  isLoading: false,
   error: null,
 };
 
@@ -96,11 +96,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Get initial session
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        await loadUserProfile(session.user);
-      } else {
+      try {
+        dispatch({ type: 'SET_LOADING', payload: true });
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          await loadUserProfile(session.user);
+        } else {
+          dispatch({ type: 'SET_LOADING', payload: false });
+        }
+      } catch (error) {
+        console.error('Error getting initial session:', error);
         dispatch({ type: 'SET_LOADING', payload: false });
       }
     };
@@ -192,27 +198,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (credentials: LoginCredentials): Promise<void> => {
     dispatch({ type: 'LOGIN_START' });
     
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: credentials.email,
-      password: credentials.password,
-    });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
 
-    if (error) {
-      let errorMessage = error.message || 'Login failed';
-      
-      // Provide more user-friendly error messages
-      if (error.message === 'Invalid login credentials') {
-        errorMessage = 'Please check your email and password, or sign up if you don\'t have an account.';
-      } else if (error.message === 'Email not confirmed') {
-        errorMessage = 'EMAIL_NOT_CONFIRMED'; // Special flag for the UI to handle
+      if (error) {
+        let errorMessage = error.message || 'Login failed';
+        
+        // Provide more user-friendly error messages
+        if (error.message === 'Invalid login credentials') {
+          errorMessage = 'Please check your email and password, or sign up if you don\'t have an account.';
+        } else if (error.message === 'Email not confirmed') {
+          errorMessage = 'EMAIL_NOT_CONFIRMED'; // Special flag for the UI to handle
+        }
+        
+        dispatch({ type: 'LOGIN_FAILURE', payload: errorMessage });
+        return;
       }
-      
-      dispatch({ type: 'LOGIN_FAILURE', payload: errorMessage });
-      return;
-    }
 
-    if (data.user) {
-      await loadUserProfile(data.user);
+      if (data.user) {
+        await loadUserProfile(data.user);
+      } else {
+        dispatch({ type: 'LOGIN_FAILURE', payload: 'Login failed - no user data received' });
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      dispatch({ type: 'LOGIN_FAILURE', payload: error.message || 'An unexpected error occurred' });
     }
   };
 
@@ -237,20 +250,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (authData.user) {
+        // Check if user needs email confirmation
+        if (!authData.session) {
+          dispatch({ type: 'LOGIN_FAILURE', payload: 'EMAIL_NOT_CONFIRMED' });
+          return;
+        }
+
         // The trigger will create the profile automatically with the correct data
         // Wait a moment for the trigger to complete, then load the profile
         setTimeout(async () => {
           await loadUserProfile(authData.user!);
         }, 1000);
+      } else {
+        dispatch({ type: 'LOGIN_FAILURE', payload: 'Registration failed - no user data received' });
       }
     } catch (error: any) {
+      console.error('Registration error:', error);
       dispatch({ type: 'LOGIN_FAILURE', payload: error.message || 'Registration failed' });
     }
   };
 
   const logout = async (): Promise<void> => {
-    await supabase.auth.signOut();
-    dispatch({ type: 'LOGOUT' });
+    try {
+      await supabase.auth.signOut();
+      dispatch({ type: 'LOGOUT' });
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still dispatch logout even if there's an error
+      dispatch({ type: 'LOGOUT' });
+    }
   };
 
   const updateProfile = async (updates: Partial<AuthUser>): Promise<void> => {
