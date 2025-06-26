@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Brain, AlertCircle, Check, Sun, Moon } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Brain, AlertCircle, Check, Sun, Moon, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { RegisterData } from '../../types/auth';
 
@@ -20,7 +20,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onSwitchToLogin, dar
     lastName: '',
     password: '',
     confirmPassword: '',
-    agreeToTerms: false,
+    agreeToTerms: true, // Set to true by default since we're removing the checkbox
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
@@ -68,10 +68,6 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onSwitchToLogin, dar
 
     if (formData.password !== formData.confirmPassword) {
       errors.confirmPassword = 'Passwords do not match';
-    }
-
-    if (!formData.agreeToTerms) {
-      errors.agreeToTerms = 'You must agree to the terms and conditions';
     }
 
     setValidationErrors(errors);
@@ -159,6 +155,28 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onSwitchToLogin, dar
             <h1 className={`text-2xl font-bold transition-colors duration-300 ${
               darkMode ? 'text-white' : 'text-gray-900'
             }`}>LearnPath</h1>
+          </div>
+
+          {/* Testing Phase Notice */}
+          <div className={`border-2 border-orange-400 rounded-xl p-6 mb-8 transition-colors duration-300 ${
+            darkMode ? 'bg-orange-900/20 border-orange-400' : 'bg-orange-50 border-orange-400'
+          }`}>
+            <div className="flex items-start space-x-3">
+              <AlertTriangle className="w-6 h-6 text-orange-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className={`font-semibold text-orange-700 mb-2 transition-colors duration-300 ${
+                  darkMode ? 'text-orange-300' : 'text-orange-700'
+                }`}>
+                  Testing Phase Notice
+                </h3>
+                <p className={`text-sm leading-relaxed transition-colors duration-300 ${
+                  darkMode ? 'text-orange-200' : 'text-orange-600'
+                }`}>
+                  This website is currently in testing phase. Please fill in the information carefully. 
+                  When the testing phase ends, all user data will be removed.
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className={`border rounded-2xl p-8 shadow-xl transition-colors duration-300 ${
@@ -381,34 +399,6 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onSwitchToLogin, dar
                 </div>
                 {validationErrors.confirmPassword && (
                   <p className="mt-1 text-sm text-red-600">{validationErrors.confirmPassword}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="flex items-start">
-                  <input
-                    type="checkbox"
-                    checked={formData.agreeToTerms}
-                    onChange={(e) => setFormData({ ...formData, agreeToTerms: e.target.checked })}
-                    className={`w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-400 mt-1 ${
-                      validationErrors.agreeToTerms ? 'border-red-500' : ''
-                    }`}
-                  />
-                  <span className={`ml-2 text-sm transition-colors duration-300 ${
-                    darkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    I agree to the{' '}
-                    <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
-                      Terms of Service
-                    </a>{' '}
-                    and{' '}
-                    <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
-                      Privacy Policy
-                    </a>
-                  </span>
-                </label>
-                {validationErrors.agreeToTerms && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.agreeToTerms}</p>
                 )}
               </div>
 
