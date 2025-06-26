@@ -9,6 +9,7 @@ import { SubjectDashboard } from './components/subjects/SubjectDashboard';
 import { SubjectInfoPage } from './components/subjects/SubjectInfoPage';
 import { StudyDashboard } from './components/analytics/StudyDashboard';
 import { Navbar } from './components/common/Navbar';
+import { Footer } from './components/common/Footer';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Subject } from './types';
@@ -159,20 +160,30 @@ function AppContent() {
   if (!isAuthenticated) {
     if (authView === 'register') {
       return (
-        <RegisterPage 
-          onSwitchToLogin={() => setAuthView('login')}
-          darkMode={darkMode}
-          onToggleDarkMode={toggleDarkMode}
-        />
+        <div className="min-h-screen flex flex-col">
+          <div className="flex-1">
+            <RegisterPage 
+              onSwitchToLogin={() => setAuthView('login')}
+              darkMode={darkMode}
+              onToggleDarkMode={toggleDarkMode}
+            />
+          </div>
+          <Footer darkMode={darkMode} />
+        </div>
       );
     }
     
     return (
-      <LoginPage 
-        onSwitchToRegister={() => setAuthView('register')}
-        darkMode={darkMode}
-        onToggleDarkMode={toggleDarkMode}
-      />
+      <div className="min-h-screen flex flex-col">
+        <div className="flex-1">
+          <LoginPage 
+            onSwitchToLogin={() => setAuthView('register')}
+            darkMode={darkMode}
+            onToggleDarkMode={toggleDarkMode}
+          />
+        </div>
+        <Footer darkMode={darkMode} />
+      </div>
     );
   }
 
@@ -180,132 +191,160 @@ function AppContent() {
   switch (currentView) {
     case 'profile':
       return (
-        <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-          <Navbar 
-            darkMode={darkMode} 
-            onToggleDarkMode={toggleDarkMode}
-            onNavigate={handleNavigation}
-            currentView={currentView}
-          />
-          <ProfilePage
-            onBack={handleBackToDashboard}
-            darkMode={darkMode}
-          />
+        <div className="min-h-screen flex flex-col">
+          <div className={`flex-1 transition-colors duration-300 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+            <Navbar 
+              darkMode={darkMode} 
+              onToggleDarkMode={toggleDarkMode}
+              onNavigate={handleNavigation}
+              currentView={currentView}
+            />
+            <ProfilePage
+              onBack={handleBackToDashboard}
+              darkMode={darkMode}
+            />
+          </div>
+          <Footer darkMode={darkMode} />
         </div>
       );
     case 'subjects':
       return (
-        <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-          <Navbar 
-            darkMode={darkMode} 
-            onToggleDarkMode={toggleDarkMode}
-            onNavigate={handleNavigation}
-            currentView={currentView}
-          />
-          <SubjectDashboard
-            onBack={handleBackToDashboard}
-            darkMode={darkMode}
-            onSelectSubject={handleSelectSubject}
-            subjects={subjects}
-            onDeleteSubject={handleDeleteSubject}
-          />
+        <div className="min-h-screen flex flex-col">
+          <div className={`flex-1 transition-colors duration-300 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+            <Navbar 
+              darkMode={darkMode} 
+              onToggleDarkMode={toggleDarkMode}
+              onNavigate={handleNavigation}
+              currentView={currentView}
+            />
+            <SubjectDashboard
+              onBack={handleBackToDashboard}
+              darkMode={darkMode}
+              onSelectSubject={handleSelectSubject}
+              subjects={subjects}
+              onDeleteSubject={handleDeleteSubject}
+            />
+          </div>
+          <Footer darkMode={darkMode} />
         </div>
       );
     case 'subject-info':
       return selectedSubject ? (
-        <SubjectInfoPage
-          subject={selectedSubject}
-          onBack={handleBackToDashboard}
-          darkMode={darkMode}
-          isBookmarked={bookmarkedSubjects.includes(selectedSubject.id)}
-          onToggleBookmark={toggleBookmark}
-        />
+        <div className="min-h-screen flex flex-col">
+          <div className="flex-1">
+            <SubjectInfoPage
+              subject={selectedSubject}
+              onBack={handleBackToDashboard}
+              darkMode={darkMode}
+              isBookmarked={bookmarkedSubjects.includes(selectedSubject.id)}
+              onToggleBookmark={toggleBookmark}
+            />
+          </div>
+          <Footer darkMode={darkMode} />
+        </div>
       ) : (
         <div>Subject not found</div>
       );
     case 'analytics':
       return (
-        <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-          <Navbar 
-            darkMode={darkMode} 
-            onToggleDarkMode={toggleDarkMode}
-            onNavigate={handleNavigation}
-            currentView={currentView}
-          />
-          <StudyDashboard
-            onBack={handleBackToDashboard}
-            darkMode={darkMode}
-          />
+        <div className="min-h-screen flex flex-col">
+          <div className={`flex-1 transition-colors duration-300 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+            <Navbar 
+              darkMode={darkMode} 
+              onToggleDarkMode={toggleDarkMode}
+              onNavigate={handleNavigation}
+              currentView={currentView}
+            />
+            <StudyDashboard
+              onBack={handleBackToDashboard}
+              darkMode={darkMode}
+            />
+          </div>
+          <Footer darkMode={darkMode} />
         </div>
       );
     case 'ai-tutor':
       return (
-        <TutorChat
-          selectedSubject={selectedSubject}
-          onBack={handleBackToDashboard}
-          darkMode={darkMode}
-          onNavigateToSubjects={handleNavigateToSubjects}
-          onCreateSubject={handleCreateSubject}
-        />
+        <div className="min-h-screen flex flex-col">
+          <div className="flex-1">
+            <TutorChat
+              selectedSubject={selectedSubject}
+              onBack={handleBackToDashboard}
+              darkMode={darkMode}
+              onNavigateToSubjects={handleNavigateToSubjects}
+              onCreateSubject={handleCreateSubject}
+            />
+          </div>
+          <Footer darkMode={darkMode} />
+        </div>
       );
     case 'chat':
       return (
-        <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-          <Navbar 
-            darkMode={darkMode} 
-            onToggleDarkMode={toggleDarkMode}
-            onNavigate={handleNavigation}
-            currentView={currentView}
-          />
-          <TutorChat
-            selectedSubject={selectedSubject}
-            onBack={handleBackToDashboard}
-            darkMode={darkMode}
-            onNavigateToSubjects={handleNavigateToSubjects}
-            onCreateSubject={handleCreateSubject}
-          />
+        <div className="min-h-screen flex flex-col">
+          <div className={`flex-1 transition-colors duration-300 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+            <Navbar 
+              darkMode={darkMode} 
+              onToggleDarkMode={toggleDarkMode}
+              onNavigate={handleNavigation}
+              currentView={currentView}
+            />
+            <TutorChat
+              selectedSubject={selectedSubject}
+              onBack={handleBackToDashboard}
+              darkMode={darkMode}
+              onNavigateToSubjects={handleNavigateToSubjects}
+              onCreateSubject={handleCreateSubject}
+            />
+          </div>
+          <Footer darkMode={darkMode} />
         </div>
       );
     case 'quiz':
       return (
-        <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-          <Navbar 
-            darkMode={darkMode} 
-            onToggleDarkMode={toggleDarkMode}
-            onNavigate={handleNavigation}
-            currentView={currentView}
-          />
-          <QuizSystem
-            selectedSubject={selectedSubject}
-            onBack={handleBackToDashboard}
-            onQuizComplete={handleQuizComplete}
-            darkMode={darkMode}
-          />
+        <div className="min-h-screen flex flex-col">
+          <div className={`flex-1 transition-colors duration-300 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+            <Navbar 
+              darkMode={darkMode} 
+              onToggleDarkMode={toggleDarkMode}
+              onNavigate={handleNavigation}
+              currentView={currentView}
+            />
+            <QuizSystem
+              selectedSubject={selectedSubject}
+              onBack={handleBackToDashboard}
+              onQuizComplete={handleQuizComplete}
+              darkMode={darkMode}
+            />
+          </div>
+          <Footer darkMode={darkMode} />
         </div>
       );
     default:
       return (
-        <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-          <Navbar 
-            darkMode={darkMode} 
-            onToggleDarkMode={toggleDarkMode}
-            onNavigate={handleNavigation}
-            currentView={currentView}
-          />
-          <Dashboard
-            user={mockUser}
-            subjects={subjects}
-            weakAreas={weakAreas}
-            recentSessions={recentSessions}
-            onSelectSubject={handleSelectSubject}
-            onStartChat={handleStartChat}
-            onStartQuiz={handleStartQuiz}
-            darkMode={darkMode}
-            bookmarkedSubjects={bookmarkedSubjects}
-            onToggleBookmark={toggleBookmark}
-            onNavigateToSubjects={handleNavigateToSubjects}
-            onDeleteSubject={handleDeleteSubject}
-          />
+        <div className="min-h-screen flex flex-col">
+          <div className={`flex-1 transition-colors duration-300 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+            <Navbar 
+              darkMode={darkMode} 
+              onToggleDarkMode={toggleDarkMode}
+              onNavigate={handleNavigation}
+              currentView={currentView}
+            />
+            <Dashboard
+              user={mockUser}
+              subjects={subjects}
+              weakAreas={weakAreas}
+              recentSessions={recentSessions}
+              onSelectSubject={handleSelectSubject}
+              onStartChat={handleStartChat}
+              onStartQuiz={handleStartQuiz}
+              darkMode={darkMode}
+              bookmarkedSubjects={bookmarkedSubjects}
+              onToggleBookmark={toggleBookmark}
+              onNavigateToSubjects={handleNavigateToSubjects}
+              onDeleteSubject={handleDeleteSubject}
+            />
+          </div>
+          <Footer darkMode={darkMode} />
         </div>
       );
   }
